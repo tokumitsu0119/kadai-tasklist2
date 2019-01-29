@@ -1,19 +1,26 @@
 class TasksController < ApplicationController
     before_action :set_task, only: [:show, :edit, :update, :destroy]
+    before_action :require_user_logged_in
+    before_action :correct_user, only: [:show, :edit, :update, :destroy]
   
   def index
-    @tasks = Task.all.page(params[:page]).per(3)
+    # @tasks = Task.all.page(params[:page]).per(5)
+    @tasks = current_user.tasks.page(params[:page]).per(5)
+    # @tasks = Task.where(user_id: current_user.id).page(params[:page]).per(5)
   end
 
   def show
   end
 
   def new
-    @task = Task.new
+    # これだと、特定のUserに紐付かないtaskができてしまう
+    # @task = Task.new
+    # 現在のUserに紐づく空のtaskができる
+    @task = current_user.tasks.build
   end
 
   def create
-    @task = Task.new(task_params)
+    @task = current_user.tasks.build(task_params)
     
      if @task.save
       flash[:success] = 'task が正常に投稿されました'
@@ -45,6 +52,11 @@ class TasksController < ApplicationController
   end
 
  private
+  def correct_user
+    unless current_user.tasks.find_by(id: params[:id])
+      redirect_to root_url
+    end
+  end
  
   def set_task
     @task = Task.find(params[:id])
